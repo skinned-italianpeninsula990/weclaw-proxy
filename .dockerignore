@@ -8,4 +8,3 @@ Makefile
 weclaw-proxy
 web/node_modules
 web/dist
-internal/server/dist
