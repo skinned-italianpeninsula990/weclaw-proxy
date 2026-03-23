@@ -211,7 +211,7 @@ export function RoutesPage() {
         <CardContent>
           <div className="flex items-center gap-4">
             <Select
-              value={routing.default_adapter}
+              value={routing.default_adapter || undefined}
               onValueChange={(v) => { if (v) setRouting({ ...routing, default_adapter: v }) }}
             >
               <SelectTrigger className="w-64">

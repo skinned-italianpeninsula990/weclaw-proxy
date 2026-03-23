@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { fetchAdapters, createAdapter, updateAdapter, deleteAdapter } from '@/lib/api'
 
@@ -46,6 +47,7 @@ export function AdaptersPage({ onUpdate }: Props) {
   const [adapters, setAdapters] = useState<AdapterConfig[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAdapter, setEditingAdapter] = useState<AdapterConfig | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [form, setForm] = useState<AdapterConfig>({
     name: '',
     type: 'openai',
@@ -94,9 +96,10 @@ export function AdaptersPage({ onUpdate }: Props) {
   }
 
   // 删除适配器
-  const handleDelete = async (name: string) => {
-    if (!confirm(`确定要删除适配器 "${name}" 吗？`)) return
-    await deleteAdapter(name)
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    await deleteAdapter(deleteTarget)
+    setDeleteTarget(null)
     await loadAdapters()
     onUpdate()
   }
@@ -262,7 +265,7 @@ export function AdaptersPage({ onUpdate }: Props) {
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(adapter)}>
                       编辑
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(adapter.name)}>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeleteTarget(adapter.name)}>
                       删除
                     </Button>
                   </TableCell>
@@ -272,6 +275,24 @@ export function AdaptersPage({ onUpdate }: Props) {
           </Table>
         )}
       </CardContent>
+
+      {/* 删除确认弹窗 */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除适配器「{deleteTarget}」吗？此操作不可撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

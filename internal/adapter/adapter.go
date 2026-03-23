@@ -47,13 +47,13 @@ type Adapter interface {
 
 // AdapterConfig 适配器通用配置
 type AdapterConfig struct {
-	Name         string            `yaml:"name"`                    // 自定义名称
-	AdapterType  string            `yaml:"type"`                    // 类型: openai, anthropic, dify, coze, webhook
-	APIKey       string            `yaml:"api_key,omitempty"`       // API Key
-	BaseURL      string            `yaml:"base_url,omitempty"`      // API 基础地址
-	Model        string            `yaml:"model,omitempty"`         // 模型名称
-	SystemPrompt string            `yaml:"system_prompt,omitempty"` // 系统提示词
-	MaxTokens    int               `yaml:"max_tokens,omitempty"`    // 最大输出 Token 数
-	Temperature  float64           `yaml:"temperature,omitempty"`   // 温度参数
-	Extra        map[string]string `yaml:"extra,omitempty"`         // 额外参数
+	Name         string            `yaml:"name" json:"name"`                              // 自定义名称
+	AdapterType  string            `yaml:"type" json:"type"`                              // 类型: openai, anthropic, dify, coze, webhook
+	APIKey       string            `yaml:"api_key,omitempty" json:"api_key,omitempty"`     // API Key
+	BaseURL      string            `yaml:"base_url,omitempty" json:"base_url,omitempty"`   // API 基础地址
+	Model        string            `yaml:"model,omitempty" json:"model,omitempty"`         // 模型名称
+	SystemPrompt string            `yaml:"system_prompt,omitempty" json:"system_prompt,omitempty"` // 系统提示词
+	MaxTokens    int               `yaml:"max_tokens,omitempty" json:"max_tokens,omitempty"`    // 最大输出 Token 数
+	Temperature  float64           `yaml:"temperature,omitempty" json:"temperature,omitempty"`  // 温度参数
+	Extra        map[string]string `yaml:"extra,omitempty" json:"extra,omitempty"`         // 额外参数
 }
