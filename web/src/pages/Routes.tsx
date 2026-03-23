@@ -32,7 +32,10 @@ export function RoutesPage() {
   const load = useCallback(async () => {
     try {
       const [routeData, adapterData] = await Promise.all([fetchRoutes(), fetchAdapters()])
-      setRouting(routeData || { default_adapter: '', rules: [] })
+      setRouting({
+        default_adapter: routeData?.default_adapter || '',
+        rules: routeData?.rules || [],
+      })
       setAdapterNames((adapterData || []).map((a: { name: string }) => a.name))
     } catch {
       // 忽略

@@ -11,20 +11,20 @@ import (
 
 // MatchRule 路由匹配规则
 type MatchRule struct {
-	Prefix  string   `yaml:"prefix,omitempty"`   // 消息前缀匹配（如 "/gpt"）
-	UserIDs []string `yaml:"user_ids,omitempty"` // 用户 ID 匹配列表
+	Prefix  string   `yaml:"prefix,omitempty" json:"prefix,omitempty"`
+	UserIDs []string `yaml:"user_ids,omitempty" json:"user_ids,omitempty"`
 }
 
 // RouteRule 路由规则
 type RouteRule struct {
-	Match       MatchRule `yaml:"match"`
-	AdapterName string    `yaml:"adapter"` // 目标适配器名称
+	Match       MatchRule `yaml:"match" json:"match"`
+	AdapterName string    `yaml:"adapter" json:"adapter"`
 }
 
 // RouterConfig 路由配置
 type RouterConfig struct {
-	DefaultAdapter string      `yaml:"default_adapter"` // 默认适配器名称
-	Rules          []RouteRule `yaml:"rules"`           // 路由规则列表
+	DefaultAdapter string      `yaml:"default_adapter" json:"default_adapter"`
+	Rules          []RouteRule `yaml:"rules" json:"rules"`
 }
 
 // Router 消息路由器
