@@ -2,9 +2,8 @@
 FROM node:20-alpine AS frontend
 WORKDIR /app/web
 COPY web/package.json web/package-lock.json ./
-RUN npm ci --silent
+RUN npm ci
 COPY web/ ./
-COPY internal/server/dist/ ../internal/server/dist/
 RUN npm run build
 
 # 阶段2：构建 Go 二进制

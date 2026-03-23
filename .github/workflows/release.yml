@@ -50,9 +50,9 @@ jobs:
           go-version-file: go.mod
 
       - name: Build frontend
+        working-directory: web
         run: |
-          cd web
-          npm ci --silent
+          npm ci
           npm run build
 
       - name: Build binary
