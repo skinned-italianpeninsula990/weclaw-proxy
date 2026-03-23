@@ -1,154 +1,106 @@
 # WeClaw-Proxy
 
-[中文文档](README.zh.md)
+> 微信开放平台 AI Agent 代理适配器 —— 让任意 AI Agent 一键对接微信
 
-A Go-based proxy adapter that bridges external AI agents into WeChat.
+## ✨ 特性
 
-## Features
+- 🔌 **多 Agent 接入** — 支持 OpenAI、DeepSeek、Ollama、Dify、Coze、自定义 Webhook
+- 🧠 **智能路由** — LLM 驱动的消息自动分类，也支持前缀 `/command` 手动路由
+- 🖥️ **Web 管理面板** — 全功能可视化配置，所有改动实时同步到 YAML
+- 📱 **扫码登录** — 网页端扫码，一步绑定微信
+- 💬 **会话管理** — 自动维护上下文和对话历史
+- 🐳 **跨平台部署** — 二进制 / Docker 一键启动，支持 Linux / macOS / Windows
 
-- 🔌 **Multi-Agent Support** — Built-in OpenAI-compatible adapter (GPT-4, vLLM, Ollama, etc.) and generic Webhook adapter
-- 🔀 **Smart Routing** — Route messages to different agents by command prefix or user ID
-- 💬 **Session Management** — Automatic conversation context and history tracking
-- 📱 **QR Code Login** — One-scan WeChat connection
-- ⚡ **Long Polling** — Real-time messaging via WeChat ilink protocol
-- 🔄 **Reconnect Recovery** — Persistent sync cursor for seamless restarts
-- 🖥️ **Admin Panel** — Web-based management UI built with React and shadcn/ui
+## 📸 截图
 
-## Quick Start
+| 面板总览 | 添加 Agent |
+|:---:|:---:|
+| ![dashboard](docs/screenshot-dashboard.png) | ![agents](docs/screenshot-agents.png) |
 
-### 1. Build
+| 路由规则 | 扫码登录 |
+|:---:|:---:|
+| ![routing](docs/screenshot-routing.png) | ![login](docs/screenshot-login.png) |
 
-```bash
-make          # Build frontend + Go binary
-# Or manually:
-# cd web && npm install && npm run build
-# go build -o weclaw-proxy ./cmd/weclaw-proxy/
-```
+## 🚀 快速开始
 
-### 2. Configure
+### Docker（推荐）
 
 ```bash
-cp configs/config.example.yaml configs/config.yaml
-# Edit config.yaml with your Agent API keys
+# 1. 创建配置文件
+curl -o config.yaml https://raw.githubusercontent.com/amigoer/weclaw-proxy/main/configs/config.example.yaml
+# 编辑 config.yaml，填入你的 Agent API Key
+
+# 2. 启动
+docker run -d \
+  --name weclaw-proxy \
+  -v ./config.yaml:/data/config.yaml \
+  -p 8080:8080 \
+  ghcr.io/amigoer/weclaw-proxy:latest
+
+# 3. 打开 http://localhost:8080 扫码登录微信
 ```
 
-### 3. Login to WeChat
+### 二进制部署
+
+从 [Releases](https://github.com/amigoer/weclaw-proxy/releases) 下载对应平台的二进制文件：
 
 ```bash
-make login
-# Or: ./weclaw-proxy --login --config configs/config.yaml
-# Scan the QR code displayed in terminal with WeChat
+# 下载并运行
+chmod +x weclaw-proxy-linux-amd64
+./weclaw-proxy-linux-amd64 --config config.yaml
 ```
 
-### 4. Start the Service
+### 从源码构建
 
 ```bash
-export OPENAI_API_KEY=sk-xxx
-make dev
-# Or: ./weclaw-proxy --config configs/config.yaml
+git clone https://github.com/amigoer/weclaw-proxy.git
+cd weclaw-proxy
+make        # 构建前端 + Go 二进制
+make dev    # 开发模式运行
 ```
 
-Once started, open `http://localhost:8080` to access the admin panel.
-
-## Make Commands
-
-| Command | Description |
-|---------|-------------|
-| `make` | Build frontend + Go binary |
-| `make web` | Build frontend only |
-| `make go` | Build Go binary only |
-| `make dev` | Start in development mode |
-| `make dev-web` | Start frontend dev server (hot reload) |
-| `make login` | WeChat QR code login |
-| `make lint` | Run code checks |
-| `make clean` | Clean build artifacts |
-
-## Admin Panel
-
-The built-in web admin panel lets you manage agents and routing rules without editing YAML files.
-
-- **Dashboard** — Connection status, agent count, active sessions
-- **Agent Management** — Add, edit, delete agents online with instant effect
-- **Routing Rules** — Visual configuration of prefix-based routing rules
-
-The admin panel is built with React + shadcn/ui and embedded into the Go binary via `go:embed` — no separate deployment needed.
-
-## Configuration
-
-### Agent Adapters
-
-Supported adapter types:
-
-| Type | Description | Config Fields |
-|------|-------------|---------------|
-| `openai` | OpenAI ChatCompletion compatible | `api_key`, `base_url`, `model`, `system_prompt` |
-| `webhook` | Generic Webhook forwarding | `base_url`, `api_key` |
-
-Any agent with an HTTP endpoint can be integrated via the `webhook` type.
-
-### Routing Rules
+## ⚙️ 配置示例
 
 ```yaml
+server:
+  port: 8080
+
+weixin:
+  app_id: "your-app-id"
+
+adapters:
+  - name: "openai-gpt4"
+    type: openai
+    api_key: "sk-xxx"
+    base_url: "https://api.openai.com/v1"
+    model: "gpt-4o"
+    system_prompt: "你是一个友好的微信助手"
+
 routing:
   default_adapter: "openai-gpt4"
   rules:
-    # Prefix match: "/claude hello" routes to the claude adapter
     - match:
         prefix: "/claude"
       adapter: "claude"
-    # User ID match
-    - match:
-        user_ids: ["user@im.wechat"]
-      adapter: "my-dify-bot"
+
+# 智能路由（可选）
+smart_routing:
+  enabled: false
+  api_key: "sk-xxx"
+  model: "gpt-4o-mini"
 ```
 
-### Built-in Commands
+> 💡 所有配置都可以在 Web 管理面板中在线编辑，无需手动修改 YAML 文件。
 
-| Command | Description |
-|---------|-------------|
-| `/clear` | Clear conversation history |
-| `/reset` | Reset conversation context |
-| `/help` | Show help information |
+## 📦 支持的平台
 
-## Project Structure
+| 平台 | AMD64 | ARM64 |
+|------|:-----:|:-----:|
+| Linux | ✅ | ✅ |
+| macOS | ✅ | ✅ |
+| Windows | ✅ | ✅ |
+| Docker | ✅ | ✅ |
 
-```
-weclaw-proxy/
-├── cmd/weclaw-proxy/main.go     # Entry point
-├── internal/
-│   ├── weixin/                   # WeChat ilink protocol
-│   │   ├── types.go              # Protocol type definitions
-│   │   ├── client.go             # API client
-│   │   ├── auth.go               # QR code login
-│   │   ├── poller.go             # Long-poll message listener
-│   │   └── sender.go             # Message sender
-│   ├── adapter/                  # Agent adapters
-│   │   ├── adapter.go            # Interface definition
-│   │   ├── openai.go             # OpenAI adapter
-│   │   └── webhook.go            # Webhook adapter
-│   ├── server/                   # Admin panel
-│   │   ├── api.go                # REST API
-│   │   ├── store.go              # Runtime config store
-│   │   └── embed.go              # Frontend embedding
-│   ├── router/router.go          # Message routing
-│   ├── session/session.go        # Session management
-│   └── config/config.go          # Configuration
-├── web/                          # Admin panel frontend (React + shadcn/ui)
-├── configs/config.example.yaml   # Example config
-├── Makefile                      # Build commands
-└── go.mod
-```
-
-## Protocol
-
-Built on the WeChat ilink protocol (reverse-engineered from `@tencent-weixin/openclaw-weixin` v1.0.3). Core APIs:
-
-- `POST /ilink/bot/getupdates` — Long-poll for incoming messages
-- `POST /ilink/bot/sendmessage` — Send messages
-- `POST /ilink/bot/getconfig` — Fetch bot configuration
-- `POST /ilink/bot/sendtyping` — Typing status indicator
-- `GET /ilink/bot/get_bot_qrcode` — Get login QR code
-
-## License
+## 📄 License
 
 MIT
