@@ -1,117 +1,116 @@
 # WeClaw-Proxy
 
-微信 Agent 代理适配器 —— 将外部 AI Agent 无缝接入微信。
+[中文文档](README.zh.md)
 
-## 功能特性
+A Go-based proxy adapter that bridges external AI agents into WeChat.
 
-- 🔌 **多 Agent 适配** — 内置 OpenAI 兼容适配器（支持 GPT-4、vLLM、Ollama 等）和通用 Webhook 适配器
-- 🔀 **智能路由** — 按消息前缀命令或用户 ID 路由到不同 Agent
-- 💬 **会话管理** — 自动维护对话上下文和历史记录
-- 📱 **扫码登录** — 微信二维码一键连接
-- ⚡ **长轮询** — 基于微信 ilink 协议的实时消息收发
-- 🔄 **断线恢复** — 同步游标持久化，重启后无缝续接
+## Features
 
-## 快速开始
+- 🔌 **Multi-Agent Support** — Built-in OpenAI-compatible adapter (GPT-4, vLLM, Ollama, etc.) and generic Webhook adapter
+- 🔀 **Smart Routing** — Route messages to different agents by command prefix or user ID
+- 💬 **Session Management** — Automatic conversation context and history tracking
+- 📱 **QR Code Login** — One-scan WeChat connection
+- ⚡ **Long Polling** — Real-time messaging via WeChat ilink protocol
+- 🔄 **Reconnect Recovery** — Persistent sync cursor for seamless restarts
 
-### 1. 编译
+## Quick Start
+
+### 1. Build
 
 ```bash
 go build -o weclaw-proxy ./cmd/weclaw-proxy/
 ```
 
-### 2. 配置
+### 2. Configure
 
 ```bash
 cp configs/config.example.yaml configs/config.yaml
-# 编辑 config.yaml，填入你的 Agent API Key
+# Edit config.yaml with your Agent API keys
 ```
 
-### 3. 登录微信
+### 3. Login to WeChat
 
 ```bash
 ./weclaw-proxy --login --config configs/config.yaml
-# 用微信扫描终端显示的二维码
+# Scan the QR code displayed in terminal with WeChat
 ```
 
-### 4. 启动服务
+### 4. Start the Service
 
 ```bash
-# 设置环境变量
 export OPENAI_API_KEY=sk-xxx
-
-# 启动
 ./weclaw-proxy --config configs/config.yaml
 ```
 
-## 配置说明
+## Configuration
 
-### Agent 适配器
+### Agent Adapters
 
-支持的适配器类型：
+Supported adapter types:
 
-| 类型 | 说明 | 配置项 |
-|------|------|--------|
-| `openai` | OpenAI ChatCompletion 兼容 | `api_key`, `base_url`, `model`, `system_prompt` |
-| `webhook` | 通用 Webhook 转发 | `base_url`, `api_key` |
+| Type | Description | Config Fields |
+|------|-------------|---------------|
+| `openai` | OpenAI ChatCompletion compatible | `api_key`, `base_url`, `model`, `system_prompt` |
+| `webhook` | Generic Webhook forwarding | `base_url`, `api_key` |
 
-更多适配器（Anthropic、Dify、Coze）可通过 `webhook` 类型接入。
+Additional agents (Anthropic, Dify, Coze) can be integrated via the `webhook` type.
 
-### 路由规则
+### Routing Rules
 
 ```yaml
 routing:
   default_adapter: "openai-gpt4"
   rules:
-    # 按前缀匹配：发送 "/claude 你好" 会路由到 claude 适配器
+    # Prefix match: "/claude hello" routes to the claude adapter
     - match:
         prefix: "/claude"
       adapter: "claude"
-    # 按用户 ID 匹配
+    # User ID match
     - match:
         user_ids: ["user@im.wechat"]
       adapter: "my-dify-bot"
 ```
 
-### 内置命令
+### Built-in Commands
 
-| 命令 | 功能 |
-|------|------|
-| `/clear` | 清除对话历史 |
-| `/reset` | 重置对话上下文 |
-| `/help` | 显示帮助信息 |
+| Command | Description |
+|---------|-------------|
+| `/clear` | Clear conversation history |
+| `/reset` | Reset conversation context |
+| `/help` | Show help information |
 
-## 项目结构
+## Project Structure
 
 ```
 weclaw-proxy/
-├── cmd/weclaw-proxy/main.go    # 程序入口
+├── cmd/weclaw-proxy/main.go    # Entry point
 ├── internal/
-│   ├── weixin/                  # 微信 ilink 协议实现
-│   │   ├── types.go             # 协议类型定义
-│   │   ├── client.go            # API 客户端
-│   │   ├── auth.go              # 二维码登录
-│   │   ├── poller.go            # 长轮询消息监听
-│   │   └── sender.go            # 消息发送
-│   ├── adapter/                 # Agent 适配器
-│   │   ├── adapter.go           # 接口定义
-│   │   ├── openai.go            # OpenAI 适配器
-│   │   └── webhook.go           # Webhook 适配器
-│   ├── router/router.go         # 消息路由
-│   ├── session/session.go       # 会话管理
-│   └── config/config.go         # 配置管理
-├── configs/config.example.yaml  # 示例配置
+│   ├── weixin/                  # WeChat ilink protocol
+│   │   ├── types.go             # Protocol type definitions
+│   │   ├── client.go            # API client
+│   │   ├── auth.go              # QR code login
+│   │   ├── poller.go            # Long-poll message listener
+│   │   └── sender.go            # Message sender
+│   ├── adapter/                 # Agent adapters
+│   │   ├── adapter.go           # Interface definition
+│   │   ├── openai.go            # OpenAI adapter
+│   │   └── webhook.go           # Webhook adapter
+│   ├── router/router.go         # Message routing
+│   ├── session/session.go       # Session management
+│   └── config/config.go         # Configuration
+├── configs/config.example.yaml  # Example config
 └── go.mod
 ```
 
-## 协议原理
+## Protocol
 
-本项目基于微信 ilink 协议（反解析自 `@tencent-weixin/openclaw-weixin` v1.0.3），核心 API：
+This project is built on the WeChat ilink protocol (reverse-engineered from `@tencent-weixin/openclaw-weixin` v1.0.3). Core APIs:
 
-- `POST /ilink/bot/getupdates` — 长轮询接收消息
-- `POST /ilink/bot/sendmessage` — 发送消息
-- `POST /ilink/bot/getconfig` — 获取配置
-- `POST /ilink/bot/sendtyping` — 输入状态指示器
-- `GET /ilink/bot/get_bot_qrcode` — 获取登录二维码
+- `POST /ilink/bot/getupdates` — Long-poll for incoming messages
+- `POST /ilink/bot/sendmessage` — Send messages
+- `POST /ilink/bot/getconfig` — Fetch bot configuration
+- `POST /ilink/bot/sendtyping` — Typing status indicator
+- `GET /ilink/bot/get_bot_qrcode` — Get login QR code
 
 ## License
 
