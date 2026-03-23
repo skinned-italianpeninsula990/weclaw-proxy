@@ -88,16 +88,24 @@ func main() {
 	msgRouter := router.NewRouter(&cfg.Routing, logger.With("module", "router"))
 	registerAdapters(cfg, msgRouter, logger)
 
+	// 初始化智能路由（如果启用）
+	if cfg.SmartRouting.Enabled {
+		smartRouter := router.NewSmartRouter(&cfg.SmartRouting, logger.With("module", "smart-router"))
+		msgRouter.SetSmartRouter(smartRouter)
+	}
+
 	// 创建消息发送器
 	sender := weixin.NewSender(wxClient, logger.With("module", "sender"))
 
 	// 创建管理后台服务
 	store := server.NewStore(fmt.Sprintf("%s/runtime.json", cfg.Weixin.DataDir), logger.With("module", "store"))
+	store.SetConfigFilePath(*configPath)
 	// 从当前配置初始化 store
 	for _, a := range cfg.Adapters {
 		store.AddAdapter(a)
 	}
 	store.SetRouting(cfg.Routing)
+	store.SetSmartRouting(cfg.SmartRouting)
 
 	adminServer := server.NewServer(store, sessionMgr, logger.With("module", "admin"))
 	adminServer.MountFrontend(server.FrontendDist, "dist")
@@ -137,10 +145,11 @@ func main() {
 	// 设置状态回调
 	adminServer.SetStatusFunc(func() server.StatusInfo {
 		return server.StatusInfo{
-			WeixinConnected: weixinConnected,
-			AccountID:       accountID,
-			AdapterCount:    len(store.ListAdapters()),
-			ActiveSessions:  sessionMgr.SessionCount(),
+			WeixinConnected:     weixinConnected,
+			AccountID:           accountID,
+			AdapterCount:        len(store.ListAdapters()),
+			ActiveSessions:      sessionMgr.SessionCount(),
+			SmartRoutingEnabled: msgRouter.SmartRouterEnabled(),
 		}
 	})
 
@@ -285,7 +294,7 @@ func handleMessage(
 	}
 
 	// 路由到适配器
-	agentAdapter, cleanMsg, err := msgRouter.Route(fromUserID, text)
+	agentAdapter, cleanMsg, err := msgRouter.RouteWithContext(ctx, fromUserID, text)
 	if err != nil {
 		logger.Error("路由失败", "error", err)
 		replyText(ctx, sender, fromUserID, sessionMgr.GetContextToken(accountID, fromUserID),

@@ -13,11 +13,12 @@ import (
 
 // Config 应用全局配置
 type Config struct {
-	Server   ServerConfig           `yaml:"server"`
-	Weixin   WeixinConfig           `yaml:"weixin"`
-	Adapters []adapter.AdapterConfig `yaml:"adapters"`
-	Routing  router.RouterConfig    `yaml:"routing"`
-	Session  session.ManagerConfig  `yaml:"session"`
+	Server       ServerConfig              `yaml:"server"`
+	Weixin       WeixinConfig              `yaml:"weixin"`
+	Adapters     []adapter.AdapterConfig   `yaml:"adapters"`
+	Routing      router.RouterConfig       `yaml:"routing"`
+	SmartRouting router.SmartRoutingConfig  `yaml:"smart_routing"`
+	Session      session.ManagerConfig     `yaml:"session"`
 }
 
 // ServerConfig 服务器配置

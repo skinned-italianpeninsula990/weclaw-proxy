@@ -23,11 +23,13 @@ interface StatusInfo {
   account_id: string
   adapter_count: number
   active_sessions: number
+  smart_routing_enabled: boolean
   uptime: string
 }
 
 export default function App() {
   const [status, setStatus] = useState<StatusInfo | null>(null)
+  const [activeTab, setActiveTab] = useState('adapters')
   const [loginDialogOpen, setLoginDialogOpen] = useState(false)
   const [qrUrl, setQrUrl] = useState('')
   const [loginStatus, setLoginStatus] = useState('')
@@ -233,7 +235,7 @@ export default function App() {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* 状态卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>连接状态</CardDescription>
@@ -266,6 +268,20 @@ export default function App() {
             </CardContent>
           </Card>
 
+          <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setActiveTab('routes')}>
+            <CardHeader className="pb-2">
+              <CardDescription>智能路由</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${status?.smart_routing_enabled ? 'bg-green-500' : 'bg-gray-400'}`} />
+                <span className="text-lg font-semibold">
+                  {status?.smart_routing_enabled ? '已开启' : '未开启'}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>账号 ID</CardDescription>
@@ -281,7 +297,7 @@ export default function App() {
         <Separator className="mb-8" />
 
         {/* 功能标签页 */}
-        <Tabs defaultValue="adapters" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="adapters">Agent 管理</TabsTrigger>
             <TabsTrigger value="routes">路由规则</TabsTrigger>

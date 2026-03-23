@@ -42,6 +42,16 @@ routing:
     #     user_ids: ["user123@im.wechat"]
     #   adapter: "custom-webhook"
 
+# 智能路由（可选）
+# 使用小 LLM 自动分析消息意图，路由到最合适的 Agent
+# 优先级：前缀规则 > 用户ID > 智能路由 > 默认 Agent
+smart_routing:
+  enabled: false
+  api_key: "${OPENAI_API_KEY}"
+  base_url: "https://api.openai.com/v1"
+  model: "gpt-4o-mini"      # 推荐用小模型，快且便宜
+  temperature: 0.1           # 低温度提高确定性
+
 # 会话管理
 session:
   history_limit: 20       # 保留最近 N 条对话历史

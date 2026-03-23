@@ -19,11 +19,12 @@ import (
 
 // StatusInfo 系统状态信息
 type StatusInfo struct {
-	WeixinConnected bool   `json:"weixin_connected"`
-	AccountID       string `json:"account_id"`
-	AdapterCount    int    `json:"adapter_count"`
-	ActiveSessions  int    `json:"active_sessions"`
-	Uptime          string `json:"uptime"`
+	WeixinConnected     bool   `json:"weixin_connected"`
+	AccountID           string `json:"account_id"`
+	AdapterCount        int    `json:"adapter_count"`
+	ActiveSessions      int    `json:"active_sessions"`
+	SmartRoutingEnabled bool   `json:"smart_routing_enabled"`
+	Uptime              string `json:"uptime"`
 }
 
 // loginState Web 登录状态
@@ -101,6 +102,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/adapters", s.cors(s.handleAdapters))
 	s.mux.HandleFunc("/api/adapters/", s.cors(s.handleAdapterByName))
 	s.mux.HandleFunc("/api/routes", s.cors(s.handleRoutes))
+	s.mux.HandleFunc("/api/smart-routing", s.cors(s.handleSmartRouting))
 	s.mux.HandleFunc("/api/logout", s.cors(s.handleLogout))
 	s.mux.HandleFunc("/api/login/qrcode", s.cors(s.handleLoginQRCode))
 	s.mux.HandleFunc("/api/login/status", s.cors(s.handleLoginStatus))
@@ -197,6 +199,7 @@ func (s *Server) handleAdapters(w http.ResponseWriter, r *http.Request) {
 		}
 		s.store.AddAdapter(cfg)
 		_ = s.store.Save()
+		_ = s.store.SaveToYAML()
 		s.logger.Info("适配器已添加", "name", cfg.Name)
 		s.json(w, map[string]string{"status": "ok", "name": cfg.Name})
 
@@ -242,6 +245,7 @@ func (s *Server) handleAdapterByName(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_ = s.store.Save()
+		_ = s.store.SaveToYAML()
 		s.json(w, map[string]string{"status": "ok"})
 
 	case http.MethodDelete:
@@ -250,6 +254,7 @@ func (s *Server) handleAdapterByName(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_ = s.store.Save()
+		_ = s.store.SaveToYAML()
 		s.json(w, map[string]string{"status": "ok"})
 
 	default:
@@ -296,6 +301,39 @@ func (s *Server) handleRoutes(w http.ResponseWriter, r *http.Request) {
 			Rules:          rules,
 		})
 		_ = s.store.Save()
+		_ = s.store.SaveToYAML()
+		s.json(w, map[string]string{"status": "ok"})
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleSmartRouting(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		cfg := s.store.GetSmartRouting()
+		// 脱敏 API Key
+		masked := cfg
+		if masked.APIKey != "" {
+			masked.APIKey = maskKey(masked.APIKey)
+		}
+		s.json(w, masked)
+
+	case http.MethodPut:
+		var cfg router.SmartRoutingConfig
+		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
+			s.jsonErr(w, "无效的请求体", http.StatusBadRequest)
+			return
+		}
+		// 保留原 API Key（如果前端发回的是脱敏值）
+		if isMasked(cfg.APIKey) {
+			existing := s.store.GetSmartRouting()
+			cfg.APIKey = existing.APIKey
+		}
+		s.store.SetSmartRouting(cfg)
+		_ = s.store.Save()
+		_ = s.store.SaveToYAML()
 		s.json(w, map[string]string{"status": "ok"})
 
 	default:

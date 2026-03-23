@@ -2,28 +2,32 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
 
 	"github.com/amigoer/weclaw-proxy/internal/adapter"
 	"github.com/amigoer/weclaw-proxy/internal/router"
+	"gopkg.in/yaml.v3"
 )
 
 // RuntimeConfig 运行时配置（支持热更新）
 type RuntimeConfig struct {
-	Adapters       []adapter.AdapterConfig `json:"adapters"`
-	Routing        router.RouterConfig     `json:"routing"`
-	HistoryLimit   int                     `json:"history_limit"`
-	TimeoutMinutes int                    `json:"timeout_minutes"`
+	Adapters       []adapter.AdapterConfig  `json:"adapters" yaml:"adapters"`
+	Routing        router.RouterConfig      `json:"routing" yaml:"routing"`
+	SmartRouting   router.SmartRoutingConfig `json:"smart_routing" yaml:"smart_routing"`
+	HistoryLimit   int                      `json:"history_limit" yaml:"-"`
+	TimeoutMinutes int                      `json:"timeout_minutes" yaml:"-"`
 }
 
 // Store 运行时配置存储
 type Store struct {
-	config   RuntimeConfig
-	filePath string
-	mu       sync.RWMutex
-	logger   *slog.Logger
+	config         RuntimeConfig
+	filePath       string // runtime.json 路径
+	configFilePath string // config.yaml 路径（用于回写）
+	mu             sync.RWMutex
+	logger         *slog.Logger
 
 	// 配置变更回调
 	onUpdate func(cfg *RuntimeConfig)
@@ -68,7 +72,7 @@ func (s *Store) Load() error {
 	return json.Unmarshal(data, &s.config)
 }
 
-// Save 保存配置到文件
+// Save 保存配置到 runtime.json
 func (s *Store) Save() error {
 	s.mu.RLock()
 	data, err := json.MarshalIndent(s.config, "", "  ")
@@ -77,6 +81,72 @@ func (s *Store) Save() error {
 		return err
 	}
 	return os.WriteFile(s.filePath, data, 0600)
+}
+
+// SetConfigFilePath 设置 YAML 配置文件路径（用于回写）
+func (s *Store) SetConfigFilePath(path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.configFilePath = path
+}
+
+// yamlConfig 用于 YAML 序列化的完整配置结构
+type yamlConfig struct {
+	Server       serverYAML                `yaml:"server"`
+	Weixin       weixinYAML                `yaml:"weixin"`
+	Adapters     []adapter.AdapterConfig   `yaml:"adapters"`
+	Routing      router.RouterConfig       `yaml:"routing"`
+	SmartRouting router.SmartRoutingConfig  `yaml:"smart_routing"`
+	Session      sessionYAML               `yaml:"session"`
+}
+type serverYAML struct {
+	Port int    `yaml:"port"`
+	Host string `yaml:"host,omitempty"`
+}
+type weixinYAML struct {
+	BaseURL           string `yaml:"base_url"`
+	CDNBaseURL        string `yaml:"cdn_base_url"`
+	LongPollTimeoutMs int    `yaml:"long_poll_timeout_ms"`
+	DataDir           string `yaml:"data_dir"`
+}
+type sessionYAML struct {
+	HistoryLimit   int `yaml:"history_limit"`
+	TimeoutMinutes int `yaml:"timeout_minutes"`
+}
+
+// SaveToYAML 将配置回写到 YAML 文件
+func (s *Store) SaveToYAML() error {
+	s.mu.RLock()
+	cfgPath := s.configFilePath
+	currentCfg := s.config
+	s.mu.RUnlock()
+
+	if cfgPath == "" {
+		return fmt.Errorf("未设置 YAML 配置文件路径")
+	}
+
+	// 读取现有 YAML 保留 server/weixin/session 的配置
+	var existing yamlConfig
+	if data, err := os.ReadFile(cfgPath); err == nil {
+		_ = yaml.Unmarshal(data, &existing)
+	}
+
+	// 只更新可编辑的部分
+	existing.Adapters = currentCfg.Adapters
+	existing.Routing = currentCfg.Routing
+	existing.SmartRouting = currentCfg.SmartRouting
+
+	data, err := yaml.Marshal(&existing)
+	if err != nil {
+		return fmt.Errorf("序列化 YAML 失败: %w", err)
+	}
+
+	if err := os.WriteFile(cfgPath, data, 0600); err != nil {
+		return fmt.Errorf("写入 YAML 文件失败: %w", err)
+	}
+
+	s.logger.Info("配置已同步到 YAML 文件", "path", cfgPath)
+	return nil
 }
 
 // GetConfig 获取当前配置副本
@@ -211,6 +281,28 @@ func (s *Store) GetRouting() router.RouterConfig {
 func (s *Store) SetRouting(routing router.RouterConfig) {
 	s.mu.Lock()
 	s.config.Routing = routing
+	fn := s.onUpdate
+	configCopy := s.config
+	s.mu.Unlock()
+
+	if fn != nil {
+		fn(&configCopy)
+	}
+}
+
+// --- SmartRouting ---
+
+// GetSmartRouting 获取智能路由配置
+func (s *Store) GetSmartRouting() router.SmartRoutingConfig {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.config.SmartRouting
+}
+
+// SetSmartRouting 更新智能路由配置
+func (s *Store) SetSmartRouting(cfg router.SmartRoutingConfig) {
+	s.mu.Lock()
+	s.config.SmartRouting = cfg
 	fn := s.onUpdate
 	configCopy := s.config
 	s.mu.Unlock()

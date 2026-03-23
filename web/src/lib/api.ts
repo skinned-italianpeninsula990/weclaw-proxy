@@ -52,6 +52,21 @@ export async function updateRoutes(data: Record<string, unknown>) {
   return res.json()
 }
 
+// 智能路由 API
+export async function fetchSmartRouting() {
+  const res = await fetch(`${API_BASE}/api/smart-routing`)
+  return res.json()
+}
+
+export async function updateSmartRouting(data: Record<string, unknown>) {
+  const res = await fetch(`${API_BASE}/api/smart-routing`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
 // 退出微信登录
 export async function logout() {
   const res = await fetch(`${API_BASE}/api/logout`, {

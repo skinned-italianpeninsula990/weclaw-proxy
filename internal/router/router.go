@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -32,6 +33,7 @@ type Router struct {
 	adapters       map[string]adapter.Adapter // 适配器注册表
 	defaultAdapter string                     // 默认适配器名称
 	rules          []RouteRule                // 路由规则
+	smartRouter    *SmartRouter               // 智能路由器（可选）
 	mu             sync.RWMutex
 	logger         *slog.Logger
 }
@@ -68,15 +70,38 @@ func (r *Router) GetAdapter(name string) (adapter.Adapter, bool) {
 	return a, ok
 }
 
+// SetSmartRouter 设置智能路由器
+func (r *Router) SetSmartRouter(sr *SmartRouter) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.smartRouter = sr
+	if sr != nil {
+		r.logger.Info("智能路由已启用")
+	} else {
+		r.logger.Info("智能路由已禁用")
+	}
+}
+
+// SmartRouterEnabled 检查智能路由是否启用
+func (r *Router) SmartRouterEnabled() bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.smartRouter != nil
+}
+
 // Route 根据消息内容和用户 ID 路由到合适的适配器
 // 返回：(适配器, 去掉前缀后的消息文本, 错误)
 func (r *Router) Route(userID string, message string) (adapter.Adapter, string, error) {
+	return r.RouteWithContext(context.Background(), userID, message)
+}
+
+// RouteWithContext 带 context 的路由（支持智能路由超时控制）
+func (r *Router) RouteWithContext(ctx context.Context, userID string, message string) (adapter.Adapter, string, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	// 按规则顺序匹配
+	// 1. 按规则顺序匹配（前缀 + 用户ID）
 	for _, rule := range r.rules {
-		// 检查前缀匹配
 		if rule.Match.Prefix != "" {
 			if strings.HasPrefix(message, rule.Match.Prefix) {
 				a, ok := r.adapters[rule.AdapterName]
@@ -87,7 +112,6 @@ func (r *Router) Route(userID string, message string) (adapter.Adapter, string, 
 					)
 					continue
 				}
-				// 去掉前缀，并去除前导空格
 				cleanMsg := strings.TrimSpace(strings.TrimPrefix(message, rule.Match.Prefix))
 				r.logger.Debug("路由匹配: 前缀",
 					"prefix", rule.Match.Prefix,
@@ -97,7 +121,6 @@ func (r *Router) Route(userID string, message string) (adapter.Adapter, string, 
 			}
 		}
 
-		// 检查用户 ID 匹配
 		if len(rule.Match.UserIDs) > 0 {
 			for _, uid := range rule.Match.UserIDs {
 				if uid == userID {
@@ -119,7 +142,20 @@ func (r *Router) Route(userID string, message string) (adapter.Adapter, string, 
 		}
 	}
 
-	// 使用默认适配器
+	// 2. 智能路由（如果启用且有多个适配器）
+	if r.smartRouter != nil && len(r.adapters) > 1 {
+		adapterInfos := r.buildAdapterInfos()
+		if name, err := r.smartRouter.Classify(ctx, message, adapterInfos); err == nil {
+			if a, ok := r.adapters[name]; ok {
+				r.logger.Info("智能路由命中", "adapter", name)
+				return a, message, nil
+			}
+		} else {
+			r.logger.Warn("智能路由失败，fallback 到默认", "error", err)
+		}
+	}
+
+	// 3. 默认适配器（兜底）
 	if r.defaultAdapter != "" {
 		a, ok := r.adapters[r.defaultAdapter]
 		if ok {
@@ -128,6 +164,18 @@ func (r *Router) Route(userID string, message string) (adapter.Adapter, string, 
 	}
 
 	return nil, message, fmt.Errorf("没有匹配的适配器: userID=%s", userID)
+}
+
+// buildAdapterInfos 构建适配器信息列表（供智能路由使用）
+func (r *Router) buildAdapterInfos() []AdapterInfo {
+	infos := make([]AdapterInfo, 0, len(r.adapters))
+	for name := range r.adapters {
+		infos = append(infos, AdapterInfo{
+			Name:        name,
+			Description: fmt.Sprintf("AI Agent: %s", name),
+		})
+	}
+	return infos
 }
 
 // UpdateRules 动态更新路由规则

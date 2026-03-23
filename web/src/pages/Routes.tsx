@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { fetchRoutes, updateRoutes, fetchAdapters } from '@/lib/api'
+import { Switch } from '@/components/ui/switch'
+import { fetchRoutes, updateRoutes, fetchAdapters, fetchSmartRouting, updateSmartRouting } from '@/lib/api'
 
 // 路由规则类型
 interface RouteRule {
@@ -23,20 +24,43 @@ interface RoutingConfig {
   rules: RouteRule[]
 }
 
+interface SmartRoutingConfig {
+  enabled: boolean
+  api_key: string
+  base_url: string
+  model: string
+  temperature: number
+}
+
 export function RoutesPage() {
   const [routing, setRouting] = useState<RoutingConfig>({ default_adapter: '', rules: [] })
+  const [smartRouting, setSmartRouting] = useState<SmartRoutingConfig>({
+    enabled: false, api_key: '', base_url: '', model: '', temperature: 0.1,
+  })
   const [adapterNames, setAdapterNames] = useState<string[]>([])
   const [newRule, setNewRule] = useState({ prefix: '', adapter: '' })
   const [saving, setSaving] = useState(false)
+  const [savingSmart, setSavingSmart] = useState(false)
 
   const load = useCallback(async () => {
     try {
-      const [routeData, adapterData] = await Promise.all([fetchRoutes(), fetchAdapters()])
+      const [routeData, adapterData, smartData] = await Promise.all([
+        fetchRoutes(), fetchAdapters(), fetchSmartRouting(),
+      ])
       setRouting({
         default_adapter: routeData?.default_adapter || '',
         rules: routeData?.rules || [],
       })
       setAdapterNames((adapterData || []).map((a: { name: string }) => a.name))
+      if (smartData) {
+        setSmartRouting({
+          enabled: smartData.enabled || false,
+          api_key: smartData.api_key || '',
+          base_url: smartData.base_url || '',
+          model: smartData.model || '',
+          temperature: smartData.temperature || 0.1,
+        })
+      }
     } catch {
       // 忽略
     }
@@ -53,6 +77,16 @@ export function RoutesPage() {
       await updateRoutes(routing as unknown as Record<string, unknown>)
     } finally {
       setSaving(false)
+    }
+  }
+
+  // 保存智能路由配置
+  const handleSaveSmart = async () => {
+    setSavingSmart(true)
+    try {
+      await updateSmartRouting(smartRouting as unknown as Record<string, unknown>)
+    } finally {
+      setSavingSmart(false)
     }
   }
 
@@ -79,6 +113,93 @@ export function RoutesPage() {
 
   return (
     <div className="space-y-6">
+      {/* 智能路由 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>智能路由</CardTitle>
+          <CardDescription>
+            使用 LLM 自动分析消息意图，路由到最合适的 Agent。优先级：前缀规则 &gt; 智能路由 &gt; 默认 Agent
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="smart-toggle">启用智能路由</Label>
+              <p className="text-sm text-muted-foreground">
+                开启后，无前缀的消息将由小模型自动分类
+              </p>
+            </div>
+            <Switch
+              id="smart-toggle"
+              checked={smartRouting.enabled}
+              onCheckedChange={(checked) => setSmartRouting({ ...smartRouting, enabled: checked })}
+            />
+          </div>
+
+          {smartRouting.enabled && (
+            <>
+              <Separator />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="smart-base-url">API 地址</Label>
+                  <Input
+                    id="smart-base-url"
+                    value={smartRouting.base_url}
+                    onChange={e => setSmartRouting({ ...smartRouting, base_url: e.target.value })}
+                    placeholder="https://api.openai.com/v1"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="smart-api-key">API Key</Label>
+                  <Input
+                    id="smart-api-key"
+                    value={smartRouting.api_key}
+                    onChange={e => setSmartRouting({ ...smartRouting, api_key: e.target.value })}
+                    placeholder="sk-..."
+                    type="password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="smart-model">模型</Label>
+                  <Input
+                    id="smart-model"
+                    value={smartRouting.model}
+                    onChange={e => setSmartRouting({ ...smartRouting, model: e.target.value })}
+                    placeholder="gpt-4o-mini"
+                  />
+                </div>
+              </div>
+              <details className="mt-4">
+                <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                  高级设置
+                </summary>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="smart-temp">温度（Temperature）</Label>
+                    <p className="text-xs text-muted-foreground">值越低路由判断越稳定，推荐 0.1</p>
+                    <Input
+                      id="smart-temp"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
+                      value={smartRouting.temperature}
+                      onChange={e => setSmartRouting({ ...smartRouting, temperature: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+              </details>
+            </>
+          )}
+
+          <div className="flex justify-end">
+            <Button onClick={handleSaveSmart} disabled={savingSmart}>
+              {savingSmart ? '保存中...' : '保存智能路由'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 默认 Agent */}
       <Card>
         <CardHeader>
@@ -112,7 +233,7 @@ export function RoutesPage() {
       {/* 路由规则 */}
       <Card>
         <CardHeader>
-          <CardTitle>路由规则</CardTitle>
+          <CardTitle>前缀路由规则</CardTitle>
           <CardDescription>
             按消息前缀匹配路由到不同的 Agent，规则按顺序优先匹配
           </CardDescription>
