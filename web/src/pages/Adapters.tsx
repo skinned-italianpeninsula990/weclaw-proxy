@@ -110,6 +110,7 @@ export function AdaptersPage({ onUpdate }: Props) {
   // 保存适配器
   const handleSave = async () => {
     if (!form.name.trim()) return
+    if (form.type === 'cli' && !form.extra?.work_dir?.trim()) return
 
     try {
       if (editingAdapter) {
@@ -215,13 +216,16 @@ export function AdaptersPage({ onUpdate }: Props) {
                   </div>
 
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="adapter-workdir" className="text-right">工作目录</Label>
+                    <Label htmlFor="adapter-workdir" className="text-right">
+                      工作目录 <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="adapter-workdir"
                       value={form.extra?.work_dir || ''}
                       onChange={e => setForm({ ...form, extra: { ...form.extra, work_dir: e.target.value } })}
                       className="col-span-3"
-                      placeholder="可选，CLI 执行时的工作目录"
+                      placeholder="CLI 执行时的工作目录（如 /path/to/project）"
+                      required
                     />
                   </div>
                 </>
