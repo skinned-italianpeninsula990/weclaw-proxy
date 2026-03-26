@@ -171,7 +171,7 @@ export function AdaptersPage({ onUpdate }: Props) {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="adapter-name" className="text-right">名称</Label>
                 <Input
