@@ -100,7 +100,7 @@ func (c *Config) Validate() error {
 
 		validTypes := map[string]bool{
 			"openai": true, "anthropic": true, "dify": true,
-			"coze": true, "webhook": true, "cli": true,
+			"coze": true, "webhook": true, "cli": true, "gemini": true,
 		}
 		if !validTypes[a.AdapterType] {
 			return fmt.Errorf("不支持的适配器类型: %s（支持: %s）",
