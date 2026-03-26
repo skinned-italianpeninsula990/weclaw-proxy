@@ -6,12 +6,14 @@
 
 ## ✨ 特性
 
-- 🔌 **多 Agent 接入** — 支持 OpenAI、DeepSeek、Ollama、Dify、Coze、Webhook、**本地 CLI**（Codex / Claude Code / Gemini CLI）
+- 🔌 **多 Agent 接入** — 支持 OpenAI、DeepSeek、Ollama、**Google Gemini**、Dify、Coze、Webhook、**本地 CLI**（Codex / Claude Code / Gemini CLI）
 - 📱 **多微信账号** — 同时绑定和管理多个微信账号
 - 🧠 **智能路由** — LLM 驱动的消息自动分类，也支持前缀 `/command` 手动路由
 - 🖥️ **Web 管理面板** — 全功能可视化配置，所有改动实时同步到 YAML
 - 📷 **扫码登录** — 网页端扫码绑定，成功后引导设置备注
 - 💬 **会话管理** — 自动维护上下文和对话历史
+- 🔍 **Gemini 搜索** — Gemini 适配器原生集成 Google Search
+- 📝 **提示词变量** — 系统提示词支持 `{cur_date}`、`{model_id}` 等动态变量
 - 🐳 **跨平台部署** — 二进制 / Docker 一键启动，支持 Linux / macOS / Windows
 
 ## 📸 截图
@@ -94,6 +96,37 @@ smart_routing:
 ```
 
 > 💡 所有配置都可以在 Web 管理面板中在线编辑，无需手动修改 YAML 文件。
+
+### Gemini 适配器（支持 Google 搜索）
+
+原生支持 Google Gemini API，可启用内置的 Google Search 搜索工具：
+
+```yaml
+adapters:
+  - name: "gemini-search"
+    type: gemini
+    api_key: "AIza..."
+    model: "gemini-2.5-flash-preview-04-17"
+    system_prompt: "你是一个友好的微信助手"
+    extra:
+      enable_search: "true"   # 启用 Google 搜索工具
+```
+
+### 系统提示词变量
+
+在 `system_prompt` 中使用动态变量，运行时自动替换：
+
+| 变量 | 说明 | 示例值 |
+|------|------|--------|
+| `{cur_date}` | 当前日期 | `2026-03-26` |
+| `{cur_time}` | 当前时间 | `22:30:15` |
+| `{cur_datetime}` | 完整日期时间 | `2026-03-26 22:30:15` |
+| `{model_id}` | 当前模型 ID | `gpt-4o` |
+| `{model_name}` | 模型名称 | `gpt-4o` |
+| `{locale}` | 系统语言环境 | `zh-CN` |
+
+```yaml
+system_prompt: "今天是 {cur_date}，你正在使用 {model_name} 模型，请用 {locale} 语言回答。"
 
 ### CLI Agent 配置
 

@@ -6,12 +6,14 @@
 
 ## ✨ Features
 
-- 🔌 **Multi-Agent Support** — OpenAI, DeepSeek, Ollama, Dify, Coze, Webhook, and **Local CLI** (Codex / Claude Code / Gemini CLI)
+- 🔌 **Multi-Agent Support** — OpenAI, DeepSeek, Ollama, **Google Gemini**, Dify, Coze, Webhook, and **Local CLI** (Codex / Claude Code / Gemini CLI)
 - 📱 **Multi-Account WeChat** — Bind and manage multiple WeChat accounts simultaneously
 - 🧠 **Smart Routing** — LLM-powered automatic message classification, plus manual `/command` prefix routing
 - 🖥️ **Web Admin Panel** — Full-featured visual configuration with real-time YAML sync
 - 📷 **QR Code Login** — Scan to bind, with guided nickname setup on success
 - 💬 **Session Management** — Automatic context and conversation history
+- 🔍 **Gemini Search** — Native Google Search integration via Gemini adapter
+- 📝 **Prompt Variables** — Dynamic variables like `{cur_date}`, `{model_id}` in system prompts
 - 🐳 **Cross-Platform** — Binary / Docker one-click deploy on Linux / macOS / Windows
 
 ## 📸 Screenshots
@@ -94,6 +96,37 @@ smart_routing:
 ```
 
 > 💡 All configuration can be edited live in the Web Admin Panel — no need to manually modify YAML files.
+
+### Gemini Adapter (with Google Search)
+
+Native Google Gemini API support with optional Google Search tool:
+
+```yaml
+adapters:
+  - name: "gemini-search"
+    type: gemini
+    api_key: "AIza..."
+    model: "gemini-2.5-flash-preview-04-17"
+    system_prompt: "You are a helpful WeChat assistant"
+    extra:
+      enable_search: "true"   # Enable Google Search tool
+```
+
+### System Prompt Variables
+
+Use dynamic variables in `system_prompt` — they are automatically replaced at runtime:
+
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `{cur_date}` | Current date | `2026-03-26` |
+| `{cur_time}` | Current time | `22:30:15` |
+| `{cur_datetime}` | Full datetime | `2026-03-26 22:30:15` |
+| `{model_id}` | Model ID | `gpt-4o` |
+| `{model_name}` | Model name | `gpt-4o` |
+| `{locale}` | System locale | `zh-CN` |
+
+```yaml
+system_prompt: "Today is {cur_date}. You are using {model_name}. Reply in {locale}."
 
 ### CLI Agent
 
