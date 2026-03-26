@@ -27,6 +27,7 @@ interface AdapterConfig {
 // 支持的适配器类型
 const ADAPTER_TYPES = [
   { value: 'openai', label: 'OpenAI 兼容', desc: '支持 OpenAI、DeepSeek、通义千问、Ollama 等' },
+  { value: 'gemini', label: 'Gemini', desc: 'Google Gemini API（支持搜索工具）' },
   { value: 'webhook', label: 'Webhook', desc: '转发到自定义 HTTP 端点（对接任意 Agent）' },
   { value: 'dify', label: 'Dify', desc: 'Dify Agent / 工作流' },
   { value: 'coze', label: 'Coze', desc: 'Coze Bot 平台' },
@@ -36,6 +37,7 @@ const ADAPTER_TYPES = [
 // 类型颜色映射
 const TYPE_COLORS: Record<string, 'default' | 'secondary' | 'outline'> = {
   openai: 'default',
+  gemini: 'default',
   webhook: 'secondary',
   dify: 'outline',
   coze: 'outline',
@@ -288,6 +290,52 @@ export function AdaptersPage({ onUpdate }: Props) {
                         <code className="mx-0.5 rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{'{model_name}'}</code>
                         <code className="mx-0.5 rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{'{locale}'}</code>
                       </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {form.type === 'gemini' && (
+                <>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="gemini-model" className="text-right">模型</Label>
+                    <Input
+                      id="gemini-model"
+                      value={form.model}
+                      onChange={e => setForm({ ...form, model: e.target.value })}
+                      className="col-span-3"
+                      placeholder="gemini-2.5-flash-preview-04-17"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="gemini-prompt" className="text-right pt-3">系统提示</Label>
+                    <Textarea
+                      id="gemini-prompt"
+                      value={form.system_prompt}
+                      onChange={e => setForm({ ...form, system_prompt: e.target.value })}
+                      className="col-span-3"
+                      rows={3}
+                      placeholder="你是一个友好的微信助手..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">搜索工具</Label>
+                    <div className="col-span-3 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="gemini-search"
+                        checked={form.extra?.enable_search === 'true'}
+                        onChange={e => setForm({
+                          ...form,
+                          extra: { ...form.extra, enable_search: e.target.checked ? 'true' : '' }
+                        })}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <Label htmlFor="gemini-search" className="text-sm font-normal text-muted-foreground">
+                        启用 Google Search（AI 可联网搜索最新信息）
+                      </Label>
                     </div>
                   </div>
                 </>
